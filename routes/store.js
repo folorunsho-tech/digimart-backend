@@ -1,34 +1,19 @@
-import { db } from "../firebase/config";
-import {
+const { db } = require("../firebase/config.js");
+const express = require("express");
+const {
   collection,
   addDoc,
   doc,
   getDoc,
   updateDoc,
-  deleteDoc,
-  getDocs,
-} from "firebase/firestore";
-import { Router } from "express";
-const router = Router();
-type Store = {
-  store_id: string;
-  store_name: string;
-  store_description: string;
-  store_owner: string;
-  last_modified_at: Date;
-}[];
-export const getOwnerStores = async (uid: string) => {
-  const stores: Store = [];
-  const querySnapshot = await getDocs(collection(db, "stores"));
-  querySnapshot.forEach((doc) => {
-    if (doc.data().store_owner === uid) {
-      stores.push(doc.data());
-    }
-  });
-  return stores;
-};
+} = require("firebase/firestore");
+// const getOwnerStores = require("../libs/getOwnerStore.js");
+
+const router = express.Router();
+
 router.get("/:uid", async (req, res) => {
   const { uid } = req.params;
+  res.status(200).json({ uid });
   try {
     const docRef = await getDoc(doc(db, "stores", uid));
     res.status(200).json({ docRef });
@@ -64,13 +49,4 @@ router.patch("/updatestore", async (req, res) => {
   }
 });
 
-router.delete("/deletestore", async (req, res) => {
-  const { store_id } = req.body;
-  try {
-    const docRef = await deleteDoc(doc(db, "stores", store_id));
-    res.status(201).json({ docRef });
-  } catch (error) {
-    res.status(400).json({ error });
-  }
-});
-export default router;
+module.exports = router;

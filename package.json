@@ -4,9 +4,9 @@
   "description": "Digimart Backend built with express.js and firebase",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon server.js"
+    "start": "server.js",
+    "dev": "nodemon --trace-warnings server.js"
   },
-  "type": "module",
   "author": "Folorunsho Ibrahim",
   "license": "ISC",
   "keywords": [
@@ -17,9 +17,15 @@
     "tacheyon"
   ],
   "dependencies": {
+    "body-parser": "^1.20.2",
     "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "firebase": "^9.17.1",
-    "nodemon": "^2.0.20"
+    "firebase": "^9.17.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.13",
+    "@types/express": "^4.17.17",
+    "nodemon": "^2.0.21"
   }
 }

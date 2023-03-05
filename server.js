@@ -1,13 +1,18 @@
 require("dotenv").config();
-const cors = require("cors");
 const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const auth = require("./auth");
+const storeRoute = require("./routes/store");
 const app = express();
-const port = process.env.PORT || 5000;
+app.use(bodyParser.json());
 app.use(cors());
-app.use("/api/auth", require("./auth"));
-app.use("/api/store", require("./routes/store"));
-app.use("/api/users", require("./routes/users"));
-app.use("/api/products", require("./routes/products"));
+const port = 5000;
+app.use("/api/auth", auth);
+app.use("/api/store", storeRoute);
+// app.use("/api/store/users", storeRoute);
+// app.use("/api/users", require("./routes/users"));
+// app.use("/api/products", require("./routes/products"));
 app.listen(port, () => {
-  console.log(`Digimart app listening on port ${port}`);
+  console.log(`Digimart app listening on port localhost:${port}`);
 });
