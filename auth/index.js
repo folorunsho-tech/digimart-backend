@@ -13,84 +13,51 @@ const createOwnerData = require("../libs/createOwnerData.js");
 
 const router = express.Router();
 router.post("/signup", async (req, res) => {
-  const { email, password, display_name } = req.body;
+  const { email, password, username } = req.body;
   try {
     const { user } = await createUserWithEmailAndPassword(
       auth,
       email,
       password
     );
-    await updateProfile(user, { displayName: display_name });
-    await sendEmailVerification(user);
-    const {
-      uid,
-      email: userEmail,
-      emailVerified,
-      phoneNumber,
-      photoURL,
-      displayName,
-    } = user;
-
-    if (emailVerified) {
-      res.cookie("digimart_token", user.refreshToken);
-      res.cookie("digimart_user", user, {
-        maxAge: 1296000000,
-        secure: true,
-        httpOnly: true,
+    await updateProfile(user, { displayName: username });
+    await sendEmailVerification(user).then(() => {
+      res.status(201).json({
+        user,
+        message: `Verification Email sent to ${user.email}`,
       });
-
-      await createOwnerData({
-        uid,
-        userEmail,
-        emailVerified,
-        phoneNumber,
-        photoURL,
-        displayName,
-        stores: [],
-      });
-      res.redirect(`/initcreatestore`);
-    } else {
-      res.cookie("digimart_token", user.refreshToken);
-      res.cookie("digimart_user", user, {
-        maxAge: 1296000000,
-        secure: true,
-        httpOnly: true,
-      });
-
-      res.status(400).json({ isVerified: false, error: "Email not verified" });
-    }
+    });
   } catch (error) {
     res.status(400).json({ error });
   }
 });
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const { user } = await signInWithEmailAndPassword(auth, email, password);
     if (user.emailVerified) {
+      await createOwnerData(user);
+
+      getOwnerStores(user.uid).then((stores) => {
+        if (stores.length > 0) {
+          res
+            .status(201)
+            .json({ stores, redirect: `/admin/${stores[0].id}/home` });
+        } else {
+          res.status(201).json({ redirect: "/admin/initcreatestore" });
+        }
+      });
       res.cookie("digimart_token", user.refreshToken);
       res.cookie("digimart_user", user, {
         maxAge: 1296000000,
         secure: true,
         httpOnly: true,
       });
-
-      getOwnerStores(user.uid)
-        .then((stores) => {
-          res.status(201).json({ stores });
-        })
-        .then((stores) => {
-          res.redirect(`/${stores[0].store_id}/dashboard`);
-        });
     } else {
-      res.cookie("digimart_token", user.refreshToken);
-      res.cookie("digimart_user", user, {
-        maxAge: 1296000000,
-        secure: true,
-        httpOnly: true,
-      });
-
-      res.status(400).json({ isVerified: false, error: "Email not verified" });
+      res
+        .status(400)
+        .json({ redirect: "/admin/verifyemail", error: "Email not verified" });
     }
   } catch (error) {
     res.status(400).json({ error });
@@ -112,13 +79,9 @@ router.post("/verfy-email", async (req, res) => {
     httpOnly: true,
   });
   res.status(201).json({ user });
-  getOwnerStores(user.uid)
-    .then((stores) => {
-      res.status(201).json({ stores });
-    })
-    .then((stores) => {
-      res.redirect(`/${stores[0].store_id}/dashboard`);
-    });
+  getOwnerStores(user.uid).then((stores) => {
+    res.status(201).json({ stores, redirect: `/admin/${stores[0].id}/home` });
+  });
 });
 
 router.post("/logout", async (req, res) => {
@@ -126,8 +89,9 @@ router.post("/logout", async (req, res) => {
     await auth.signOut();
     res.clearCookie("digimart_token");
     res.clearCookie("digimart_user");
-    res.status(200).json({ message: "User logged out" });
-    res.redirect("/signin");
+    res
+      .status(200)
+      .json({ message: "User logged out", redirect: "/admin/auth/login" });
   } catch (error) {
     res.status(400).json({ error });
   }
