@@ -23,7 +23,6 @@ router.post("/signup", async (req, res) => {
     await updateProfile(user, { displayName: username });
     await sendEmailVerification(user).then(() => {
       res.status(201).json({
-        user,
         message: `Verification Email sent to ${user.email}`,
       });
     });
@@ -41,18 +40,14 @@ router.post("/login", async (req, res) => {
 
       getOwnerStores(user.uid).then((stores) => {
         if (stores.length > 0) {
-          res
-            .status(201)
-            .json({ stores, redirect: `/admin/${stores[0].id}/home` });
+          res.status(201).json({
+            stores,
+            redirect: `/admin/${stores[0].store_name}/home`,
+            user,
+          });
         } else {
-          res.status(201).json({ redirect: "/admin/initcreatestore" });
+          res.status(201).json({ redirect: "/admin/initcreatestore", user });
         }
-      });
-      res.cookie("digimart_token", user.refreshToken);
-      res.cookie("digimart_user", user, {
-        maxAge: 1296000000,
-        secure: true,
-        httpOnly: true,
       });
     } else {
       res
@@ -80,21 +75,23 @@ router.post("/verfy-email", async (req, res) => {
   });
   res.status(201).json({ user });
   getOwnerStores(user.uid).then((stores) => {
-    res.status(201).json({ stores, redirect: `/admin/${stores[0].id}/home` });
+    res
+      .status(201)
+      .json({ stores, redirect: `/admin/${stores[0].store_name}/home` });
   });
 });
 
-router.post("/logout", async (req, res) => {
-  try {
-    await auth.signOut();
-    res.clearCookie("digimart_token");
-    res.clearCookie("digimart_user");
-    res
-      .status(200)
-      .json({ message: "User logged out", redirect: "/admin/auth/login" });
-  } catch (error) {
-    res.status(400).json({ error });
-  }
-});
+// router.post("/logout", async (req, res) => {
+//   try {
+//     await auth.signOut();
+//     res.clearCookie("digimart_token");
+//     res.clearCookie("digimart_user");
+//     res
+//       .status(200)
+//       .json({ message: "User logged out", redirect: "/admin/auth/login" });
+//   } catch (error) {
+//     res.status(400).json({ error });
+//   }
+// });
 
 module.exports = router;

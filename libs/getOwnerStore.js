@@ -5,7 +5,7 @@ const getOwnerStores = async (uid) => {
   const storesRef = collection(db, "stores");
   const storesSnapshot = await getDocs(storesRef);
   storesSnapshot.forEach((doc) => {
-    if (doc.data().owner === uid) {
+    if (doc.data().owner_id === uid) {
       stores.push(doc.data());
     }
   });
